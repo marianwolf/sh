@@ -15,7 +15,7 @@ if apt-get update >> "$LOGFILE" 2>&1; then
         echo "[4/5] apt-get autopurge -y" >> "$LOGFILE"
         apt-get autopurge -y >> "$LOGFILE" 2>&1
         echo "[5/5] reboot" >> "$LOGFILE"
-        #reboot >> "$LOGFILE" 2>&1
+        reboot >> "$LOGFILE" 2>&1
     else
         echo "ERROR: apt-get dist-upgrade -y" >> "$LOGFILE"
     fi
