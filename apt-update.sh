@@ -24,7 +24,7 @@ if apt-get update >> "$LOGFILE" 2>&1; then
         echo "Status: System erfolgreich aktualisiert und bereinigt." >> "$LOGFILE"
 
         echo "[5/5] Reboot..." >> "$LOGFILE"
-        #reboot >> "$LOGFILE" 2>&1
+        reboot >> "$LOGFILE" 2>&1
         echo "Status: System neu gestartet." >> "$LOGFILE"
     else
         echo "Status: FEHLER beim dist-upgrade" >> "$LOGFILE"
