@@ -1,0 +1,13 @@
+cd /etc/cron.daily
+cd /etc/cron.weekly
+cd /etc/cron.monthly
+
+sudo curl -O https://raw.githubusercontent.com/marianwolf/sh/main/apt-update.sh
+
+sudo mv apt-update.sh /etc/cron.{daily,weekly,monthly}/apt-update
+
+sudo chmod +x /etc/cron.{daily,weekly,monthly}/apt-update
+
+
+Oneliner:
+curl -s https://raw.githubusercontent.com/marianwolf/sh/main/apt-update.sh | sudo bash
