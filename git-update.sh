@@ -1,39 +1,75 @@
 #!/bin/bash
-# Git Updates herunterladen und als Cronjob installieren
+# Git Updates: clone repository and copy .sh files to cron.daily
 
 LOGFILE="/var/log/git-update.log"
 export DEBIAN_FRONTEND=noninteractive
 
 echo "=== Automation gestartet: $(date) ===" >> "$LOGFILE"
 
-# Define arrays of source URLs and target cron files
-SOURCES=(
-    "https://raw.githubusercontent.com/marianwolf/sh/main/apt-update.sh"
-    "https://raw.githubusercontent.com/marianwolf/sh/main/git-update.sh"
-)
+REPO_URL="https://github.com/marianwolf/sh"
+REPO_DIR="/marianwolf/sh"
 
-TARGETS=(
-    "/etc/cron.daily/apt-update"
-    "/etc/cron.daily/git-update"
-)
+if [ ! -d "$REPO_DIR" ]; then
+    echo "Cloning repository $REPO_URL to $REPO_DIR" >> "$LOGFILE"
+    if ! git clone "$REPO_URL" "$REPO_DIR" >> "$LOGFILE" 2>&1; then
+        echo "ERROR: Failed to clone repository" >> "$LOGFILE"
+        echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
+        echo "" >> "$LOGFILE"
+        exit 1
+    fi
+else
+    echo "Pulling latest changes in $REPO_DIR" >> "$LOGFILE"
+    if ! (cd "$REPO_DIR" && git pull) >> "$LOGFILE" 2>&1; then
+        echo "ERROR: Failed to pull repository" >> "$LOGFILE"
+        echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
+        echo "" >> "$LOGFILE"
+        exit 1
+    fi
+fi
 
-# Check that arrays have same length
-if [ ${#SOURCES[@]} -ne ${#TARGETS[@]} ]; then
-    echo "ERROR: SOURCES and TARGETS arrays must have the same length" >> "$LOGFILE"
-    echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
-    echo "" >> "$LOGFILE"
+# Find all .sh files in the cloned repository
+echo "Searching for .sh files in $REPO_DIR" >> "$LOGFILE"
+SH_FILES=$(find "$REPO_DIR" -type f -name "*.sh" 2>/dev/null)
+if [ -z "$SH_FILES" ]; then
+    echo "WARNING: No .sh files found in repository" >> "$LOGFILE"
+else
+    echo "Found $(echo "$SH_FILES" | wc -l) .sh files" >> "$LOGFILE"
+    for SH_FILE in $SH_FILES; do
+        # Get the base filename
+        BASENAME=$(basename "$SH_FILE" .sh)
+        TARGET="/etc/cron.daily/$BASENAME"
+        echo "Copying $SH_FILE to $TARGET" >> "$LOGFILE"
+        cp "$SH_FILE" "$TARGET" >> "$LOGFILE" 2>&1
+        chmod +x "$TARGET" >> "$LOGFILE" 2>&1
+    done
+fi
+
+echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
+echo "" >> "$LOGFILE"
+    rm -rf "$TMP_DIR"
     exit 1
 fi
 
-# Update each cron file
-for i in "${!SOURCES[@]}"; do
-    SOURCE="${SOURCES[$i]}"
-    TARGET="${TARGETS[$i]}"
-    
-    echo "[$((i+1))/${#SOURCES[@]}] Updating $TARGET from $SOURCE" >> "$LOGFILE"
-    curl -o "$TARGET" "$SOURCE" >> "$LOGFILE" 2>&1
-    chmod +x "$TARGET" >> "$LOGFILE" 2>&1
-done
+# Find all .sh files in the cloned repository
+echo "Searching for .sh files in $TMP_DIR" >> "$LOGFILE"
+SH_FILES=$(find "$TMP_DIR" -type f -name "*.sh" 2>/dev/null)
+if [ -z "$SH_FILES" ]; then
+    echo "WARNING: No .sh files found in repository" >> "$LOGFILE"
+else
+    echo "Found $(echo "$SH_FILES" | wc -l) .sh files" >> "$LOGFILE"
+    for SH_FILE in $SH_FILES; do
+        # Get the base filename
+        BASENAME=$(basename "$SH_FILE" .sh)
+        TARGET="/etc/cron.daily/$BASENAME"
+        echo "Copying $SH_FILE to $TARGET" >> "$LOGFILE"
+        cp "$SH_FILE" "$TARGET" >> "$LOGFILE" 2>&1
+        chmod +x "$TARGET" >> "$LOGFILE" 2>&1
+    done
+fi
+
+# Clean up
+#echo "Removing temporary directory $TMP_DIR" >> "$LOGFILE"
+#rm -rf "$TMP_DIR"
 
 echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
 echo "" >> "$LOGFILE"
