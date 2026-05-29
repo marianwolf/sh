@@ -1,5 +1,5 @@
 #!/bin/bash
-# Täglich Updates installieren mit intelligentem Reboot
+# Install daily updates with a smart reboot
 
 LOGFILE="/var/log/apt-update.log"
 export DEBIAN_FRONTEND=noninteractive
@@ -11,12 +11,12 @@ if apt-get update >> "$LOGFILE" 2>&1; then
     echo "[2/5] apt-get dist-upgrade -y" >> "$LOGFILE"
     if apt-get dist-upgrade -y >> "$LOGFILE" 2>&1; then
         echo "[3/5] apt-get autoclean" >> "$LOGFILE"
-        apt-get autoclean -y >> "$LOGFILE" 2>&1
+        apt-get autoclean >> "$LOGFILE" 2>&1
         echo "[4/5] apt-get autopurge" >> "$LOGFILE"
-        apt-get autopurge -y >> "$LOGFILE" 2>&1
+        apt-get autopurge >> "$LOGFILE" 2>&1
         if [ -f /var/run/reboot-required ]; then
             echo "[5/5] reboot" >> "$LOGFILE"
-            # Kurze Pause, damit der Log-Buffer geschrieben werden kann
+            # Short pause to allow the log buffer to be written
             sleep 5
             reboot
         else
