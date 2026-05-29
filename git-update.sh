@@ -46,30 +46,3 @@ fi
 
 echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
 echo "" >> "$LOGFILE"
-    rm -rf "$TMP_DIR"
-    exit 1
-fi
-
-# Find all .sh files in the cloned repository
-echo "Searching for .sh files in $TMP_DIR" >> "$LOGFILE"
-SH_FILES=$(find "$TMP_DIR" -type f -name "*.sh" 2>/dev/null)
-if [ -z "$SH_FILES" ]; then
-    echo "WARNING: No .sh files found in repository" >> "$LOGFILE"
-else
-    echo "Found $(echo "$SH_FILES" | wc -l) .sh files" >> "$LOGFILE"
-    for SH_FILE in $SH_FILES; do
-        # Get the base filename
-        BASENAME=$(basename "$SH_FILE" .sh)
-        TARGET="/etc/cron.daily/$BASENAME"
-        echo "Copying $SH_FILE to $TARGET" >> "$LOGFILE"
-        cp "$SH_FILE" "$TARGET" >> "$LOGFILE" 2>&1
-        chmod +x "$TARGET" >> "$LOGFILE" 2>&1
-    done
-fi
-
-# Clean up
-#echo "Removing temporary directory $TMP_DIR" >> "$LOGFILE"
-#rm -rf "$TMP_DIR"
-
-echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
-echo "" >> "$LOGFILE"
