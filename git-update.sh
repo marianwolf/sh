@@ -19,7 +19,7 @@ if [ ! -d "$REPO_DIR" ]; then
     fi
 else
     echo "Pulling latest changes in $REPO_DIR" >> "$LOGFILE"
-    if ! (cd "$REPO_DIR" && git pull) >> "$LOGFILE" 2>&1; then
+    if ! (cd "$REPO_DIR" && git pull && git diff) >> "$LOGFILE" 2>&1; then
         echo "ERROR: Failed to pull repository" >> "$LOGFILE"
         echo "=== Automation beendet: $(date) ===" >> "$LOGFILE"
         echo "" >> "$LOGFILE"
