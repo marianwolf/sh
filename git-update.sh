@@ -41,7 +41,7 @@ if [ ! -d "$REPO_DIR" ]; then
     fi
 else
     echo "Repository exists. Updating $REPO_DIR..."
-    if ! git -C "$REPO_DIR" pull -q; then
+    if ! git -C "$REPO_DIR" pull; then
         echo "ERROR: Failed to update repository."
         echo "=== Automation finished: $(date) ==="
         exit 1
