@@ -16,6 +16,10 @@ trap 'rm -f "$LOCKFILE"' EXIT
 LOGFILE="/var/log/git-update.log"
 export DEBIAN_FRONTEND=noninteractive
 
+log() {
+    echo "$1" | tee -a "$LOGFILE"
+}
+
 # Repository configuration
 REPO_URL="https://github.com/marianwolf/sh"
 REPO_DIR="/marianwolf/sh"

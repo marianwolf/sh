@@ -16,6 +16,10 @@ trap 'rm -f "$LOCKFILE"' EXIT
 LOGFILE="/var/log/apt-update.log"
 export DEBIAN_FRONTEND=noninteractive
 
+log() {
+    echo "$1" | tee -a "$LOGFILE"
+}
+
 log "=== Automation started: $(date) ==="
 
 log "[1/5] apt-get update"
