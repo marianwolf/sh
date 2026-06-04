@@ -14,30 +14,27 @@ flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
 trap 'rm -f "$LOCKFILE"' EXIT
 
 LOGFILE="/var/log/apt-update.log"
+exec >>"$LOGFILE" 2>&1
 export DEBIAN_FRONTEND=noninteractive
 
-log() {
-    echo "$1" | tee -a "$LOGFILE"
-}
+echo "=== Automation started: $(date) ==="
 
-log "=== Automation started: $(date) ==="
-
-log "[1/5] apt-get update"
+echo "[1/5] apt-get update"
 if apt-get -qq update; then
-  log "[2/5] apt-get dist-upgrade -y"
+  echo "[2/5] apt-get dist-upgrade -y"
   if apt-get -y -qq dist-upgrade; then
-    log "[3/5] apt-get autoclean"
+    echo "[3/5] apt-get autoclean"
     apt-get -y -qq autoclean
-    log "[4/5] apt-get autopurge"
+    echo "[4/5] apt-get autopurge"
     apt-get -y -qq autopurge
-    log "[5/5] reboot"
+    echo "[5/5] reboot"
     sleep 5
     reboot
   else
-    log "ERROR: apt-get dist-upgrade failed"
+    echo "ERROR: apt-get dist-upgrade failed"
   fi
 else
-  log "ERROR: apt-get update failed"
+  echo "ERROR: apt-get update failed"
 fi
 
-log "=== Automation finished: $(date) ==="
+echo "=== Automation finished: $(date) ==="
