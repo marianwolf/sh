@@ -1,57 +1,68 @@
 #!/bin/bash
-# Git Updates: clone repository and copy .sh files to cron.daily
+# Clone repository and copy .sh files to cron.daily
+# Ensure script runs as root
+if [[ $EUID -ne 0 ]]; then
+  echo "Please run as root."
+  exit 1
+fi
+set -euo pipefail
+
+# Prevent concurrent runs
+LOCKFILE="/var/run/git-update.lock"
+exec 200>"$LOCKFILE"
+flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
+trap 'rm -f "$LOCKFILE"' EXIT
 
 LOGFILE="/var/log/git-update.log"
-REPO_URL="https://github.com/marianwolf/sh"
-REPO_DIR="/marianwolf/sh"
 export DEBIAN_FRONTEND=noninteractive
 
-# Redirect all output to logfile
-exec >>"$LOGFILE" 2>&1
-echo "=== Automation gestartet: $(date) ==="
+# Repository configuration
+REPO_URL="https://github.com/marianwolf/sh"
+REPO_DIR="/marianwolf/sh"
+
+log "=== Automation started: $(date) ==="
 
 # Check if git is installed
 if ! command -v git &> /dev/null; then
-    echo "ERROR: 'git' ist nicht installiert. Abbruch."
-    echo "=== Automation beendet: $(date) ==="
+    log "ERROR: 'git' is not installed. Exiting."
+    log "=== Automation finished: $(date) ==="
     exit 1
 fi
 
 # Clone or update repository
 if [ ! -d "$REPO_DIR" ]; then
-    echo "Klone Repository $REPO_URL nach $REPO_DIR..."
+    log "Cloning repository $REPO_URL into $REPO_DIR..."
     mkdir -p "$(dirname "$REPO_DIR")"
     if ! git clone "$REPO_URL" "$REPO_DIR"; then
-        echo "ERROR: Fehler beim Klonen des Repositories."
-        echo "=== Automation beendet: $(date) ==="
+        log "ERROR: Failed to clone repository."
+        log "=== Automation finished: $(date) ==="
         exit 1
     fi
 else
-    echo "Repository existiert bereits. Aktualisiere $REPO_DIR..."
-    if ! git -C "$REPO_DIR" pull; then
-        echo "ERROR: Fehler beim Aktualisieren (git pull) des Repositories."
-        echo "=== Automation beendet: $(date) ==="
+    log "Repository exists. Updating $REPO_DIR..."
+    if ! git -C "$REPO_DIR" pull -q; then
+        log "ERROR: Failed to update repository."
+        log "=== Automation finished: $(date) ==="
         exit 1
     fi
 fi
 
 # Copy .sh files to cron.daily
-echo "Suche nach .sh-Dateien in $REPO_DIR..."
+log "Searching for .sh files in $REPO_DIR..."
 while IFS= read -r -d '' SH_FILE; do
     BASENAME=$(basename "$SH_FILE" .sh)
     if [[ ! "$BASENAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        echo "WARNING: Dateiname '$BASENAME' ist ungültig für cron.daily. Überspringe..."
+        log "WARNING: Invalid filename '$BASENAME' for cron.daily. Skipping..."
         continue
     fi
 
     TARGET="/etc/cron.daily/$BASENAME"
-    echo "Kopiere $SH_FILE nach $TARGET"
+    log "Copying $SH_FILE to $TARGET"
     if cp "$SH_FILE" "$TARGET"; then
         chmod +x "$TARGET"
     else
-        echo "ERROR: Fehler beim Kopieren nach $TARGET"
+        log "ERROR: Failed to copy to $TARGET"
     fi
 done < <(find "$REPO_DIR" -type f -name "*.sh" -print0 2>/dev/null)
 
-echo "=== Automation beendet: $(date) ==="
-echo ""
+log "=== Automation finished: $(date) ==="

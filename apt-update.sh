@@ -1,29 +1,39 @@
 #!/bin/bash
-# Install daily updates with a smart reboot
+# Daily apt updates with reboot
+# Ensure script runs as root
+if [[ $EUID -ne 0 ]]; then
+  echo "Please run as root."
+  exit 1
+fi
+set -euo pipefail
+
+# Prevent concurrent runs
+LOCKFILE="/var/run/apt-update.lock"
+exec 200>"$LOCKFILE"
+flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
+trap 'rm -f "$LOCKFILE"' EXIT
 
 LOGFILE="/var/log/apt-update.log"
 export DEBIAN_FRONTEND=noninteractive
 
-exec >>"$LOGFILE" 2>&1
-echo "=== Automation gestartet: $(date) ==="
+log "=== Automation started: $(date) ==="
 
-echo "[1/5] apt-get update"
-if apt-get update; then
-    echo "[2/5] apt-get dist-upgrade -y"
-    if apt-get dist-upgrade -y; then
-        echo "[3/5] apt-get autoclean"
-        apt-get autoclean
-        echo "[4/5] apt-get autopurge"
-        apt-get autopurge
-        echo "[5/5] reboot"
-        # Short pause to allow the log buffer to be written
-        sleep 5
-        reboot
-    else
-        echo "ERROR: apt-get dist-upgrade fehlgeschlagen"
-    fi
+log "[1/5] apt-get update"
+if apt-get -qq update; then
+  log "[2/5] apt-get dist-upgrade -y"
+  if apt-get -y -qq dist-upgrade; then
+    log "[3/5] apt-get autoclean"
+    apt-get -y -qq autoclean
+    log "[4/5] apt-get autopurge"
+    apt-get -y -qq autopurge
+    log "[5/5] reboot"
+    sleep 5
+    reboot
+  else
+    log "ERROR: apt-get dist-upgrade failed"
+  fi
 else
-    echo "ERROR: apt-get update fehlgeschlagen"
+  log "ERROR: apt-get update failed"
 fi
-echo "=== Automation beendet: $(date) ==="
-echo ""
+
+log "=== Automation finished: $(date) ==="
