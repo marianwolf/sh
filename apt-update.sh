@@ -20,9 +20,9 @@ export DEBIAN_FRONTEND=noninteractive
 echo "=== Automation started: $(date) ==="
 
 echo "[1/5] apt-get update"
-if apt-get -qq update; then
+if apt-get update; then
   echo "[2/5] apt-get dist-upgrade -y"
-  if apt-get -y -qq dist-upgrade; then
+  if apt-get -y dist-upgrade; then
     echo "[3/5] apt-get autoclean"
     apt-get -y -qq autoclean
     echo "[4/5] apt-get autopurge"
